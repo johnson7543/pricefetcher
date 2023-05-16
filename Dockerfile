@@ -1,14 +1,14 @@
-FROM golang:1.18-alpine
+FROM golang:1.18-alpine as build
 
 WORKDIR /app
+COPY . .
 
-COPY go.mod ./
-COPY go.sum ./
+RUN CGO_ENABLED=0 go build -o pricefetcher .
+# EXPOSE 3000
+# ENTRYPOINT ["./pricefetcher"]
 
-COPY . ./
-
-RUN go build -o /pricefetcher
-
+# distroless
+FROM gcr.io/distroless/static-debian11
+COPY --from=build /app/pricefetcher .
 EXPOSE 3000
-
-CMD [ "/pricefetcher"]
+CMD ["/pricefetcher"]

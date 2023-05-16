@@ -16,3 +16,5 @@ type TemplateResponse struct {
 	Data       interface{} `json:"data,omitempty"`
 	Message    string      `json:"message,omitempty"`
 }
+
+type ContextKey string

@@ -7,6 +7,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/johnson7543/pricefetcher/proto"
 	"github.com/johnson7543/pricefetcher/service"
+	"github.com/johnson7543/pricefetcher/types"
+
 	"google.golang.org/grpc"
 )
 
@@ -37,7 +39,7 @@ func NewGRPCPriceServer(svc service.PriceService) *GRPCPriceFetcherServer {
 }
 
 func (s *GRPCPriceFetcherServer) FetchPrice(ctx context.Context, req *proto.PriceRequest) (*proto.PriceResponse, error) {
-	const uuidKey contextKey = "uuid"
+	const uuidKey types.ContextKey = "uuid"
 	ctx = context.WithValue(ctx, uuidKey, uuid.New().String())
 
 	price, err := s.svc.FetchPrice(ctx, req.Ticker)

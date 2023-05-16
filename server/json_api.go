@@ -18,8 +18,6 @@ type JSONAPIServer struct {
 	svc        service.PriceService
 }
 
-type contextKey string
-
 func NewJSONAPIServer(listenAddr string, svc service.PriceService) *JSONAPIServer {
 	return &JSONAPIServer{
 		listenAddr: listenAddr,
@@ -28,12 +26,13 @@ func NewJSONAPIServer(listenAddr string, svc service.PriceService) *JSONAPIServe
 }
 
 func (s *JSONAPIServer) Run() {
-	http.HandleFunc("/", makeHTTPHandlerFunc(s.handleFetchPrice))
+	http.HandleFunc("/fetchPrice", makeHTTPHandlerFunc(s.handleFetchPrice))
+	http.HandleFunc("/health", makeHTTPHandlerFunc(s.handleHealthCheck))
 	http.ListenAndServe(s.listenAddr, nil)
 }
 
 func makeHTTPHandlerFunc(apiFn APIFunc) http.HandlerFunc {
-	const uuidKey contextKey = "uuid"
+	const uuidKey types.ContextKey = "uuid"
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, uuidKey, uuid.New().String())
 
@@ -55,7 +54,7 @@ func makeHTTPHandlerFunc(apiFn APIFunc) http.HandlerFunc {
 }
 
 func (s *JSONAPIServer) handleFetchPrice(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	const uuidKey contextKey = "uuid"
+	const uuidKey types.ContextKey = "uuid"
 	uuid, _ := ctx.Value(uuidKey).(string)
 
 	ticker := r.URL.Query().Get("ticker")
@@ -75,6 +74,22 @@ func (s *JSONAPIServer) handleFetchPrice(ctx context.Context, w http.ResponseWri
 	Resp := types.TemplateResponse{
 		UUID:       uuid,
 		Data:       priceResp,
+		Timestamp:  timestamp,
+		StatusCode: http.StatusOK,
+	}
+
+	return writeJSON(w, http.StatusOK, &Resp)
+}
+
+func (s *JSONAPIServer) handleHealthCheck(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	const uuidKey types.ContextKey = "uuid"
+	uuid, _ := ctx.Value(uuidKey).(string)
+
+	timestamp := time.Now().Format(time.RFC3339Nano)
+
+	Resp := types.TemplateResponse{
+		UUID:       uuid,
+		Data:       "OK",
 		Timestamp:  timestamp,
 		StatusCode: http.StatusOK,
 	}
